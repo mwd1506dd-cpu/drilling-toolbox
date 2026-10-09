@@ -431,18 +431,21 @@ const disp = getDisplacement(t.od, t.id, unit);
 const w = getWeight(t.weight, unit);
 const capUnit = unit === 'metric' ? 'L/m' : 'bbl/ft';
 const wUnit = unit === 'metric' ? 'kg/m' : 'lb/ft';
+const ltrStyle = 'style="direction:ltr;unicode-bidi:embed;"';
 
 html += `<tr>
 <td>${i+1}</td>
 <td>${t.type}</td>
-<td style="font-weight:bold;direction:ltr;unicode-bidi:embed;">${t.size}</td>
-<td style="direction:ltr;unicode-bidi:embed;">${t.od}"</td>
-<td style="direction:ltr;unicode-bidi:embed;">${t.id}"</td>
-<td style="direction:ltr;unicode-bidi:embed;">${w.toFixed(2)} ${wUnit}</td>
-<td style="direction:ltr;unicode-bidi:embed;">${cap.toFixed(4)} ${capUnit}</td>
-<td style="direction:ltr;unicode-bidi:embed;">${disp.toFixed(4)} ${capUnit}</td>
+<td ${ltrStyle}>${t.size}</td>
+<td ${ltrStyle}>${t.od}"</td>
+<td ${ltrStyle}>${t.id}"</td>
+<td ${ltrStyle}>${w.toFixed(2)} ${wUnit}</td>
+<td ${ltrStyle}>${cap.toFixed(4)} ${capUnit}</td>
+<td ${ltrStyle}>${disp.toFixed(4)} ${capUnit}</td>
 </tr>`;
 });
+
+
 
 tbody.innerHTML = html;
 }
