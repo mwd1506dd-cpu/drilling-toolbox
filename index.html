@@ -435,12 +435,12 @@ const wUnit = unit === 'metric' ? 'kg/m' : 'lb/ft';
 html += `<tr>
 <td>${i+1}</td>
 <td>${t.type}</td>
-<td style="font-weight:bold;">${t.size}</td>
-<td>${t.od}"</td>
-<td>${t.id}"</td>
-<td>${w.toFixed(2)} ${wUnit}</td>
-<td>${cap.toFixed(4)} ${capUnit}</td>
-<td>${disp.toFixed(4)} ${capUnit}</td>
+<td style="font-weight:bold;direction:ltr;unicode-bidi:embed;">${t.size}</td>
+<td style="direction:ltr;unicode-bidi:embed;">${t.od}"</td>
+<td style="direction:ltr;unicode-bidi:embed;">${t.id}"</td>
+<td style="direction:ltr;unicode-bidi:embed;">${w.toFixed(2)} ${wUnit}</td>
+<td style="direction:ltr;unicode-bidi:embed;">${cap.toFixed(4)} ${capUnit}</td>
+<td style="direction:ltr;unicode-bidi:embed;">${disp.toFixed(4)} ${capUnit}</td>
 </tr>`;
 });
 
