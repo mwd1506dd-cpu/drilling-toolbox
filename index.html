@@ -183,6 +183,100 @@ font-size: 13px;
 .result-row:last-child { border-bottom: none; }
 .result-label { color: var(--text-muted); }
 .result-value { font-weight: bold; color: var(--accent); }
+/* ============ Modal ============ */
+.modal-overlay {
+position: fixed;
+top: 0; left: 0; right: 0; bottom: 0;
+background-color: rgba(0, 0, 0, 0.7);
+display: none;
+justify-content: center;
+align-items: center;
+z-index: 1000;
+padding: 15px;
+}
+.modal-overlay.active { display: flex; }
+.modal-content {
+background-color: var(--bg-card);
+border-radius: 16px;
+padding: 20px;
+max-width: 500px;
+width: 100%;
+max-height: 85vh;
+overflow-y: auto;
+border: 2px solid var(--accent);
+box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.modal-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 15px;
+padding-bottom: 12px;
+border-bottom: 2px solid var(--accent);
+}
+.modal-title {
+color: var(--accent);
+font-size: 18px;
+font-weight: bold;
+}
+.modal-close {
+background-color: var(--danger);
+color: #fff;
+border: none;
+border-radius: 50%;
+width: 32px;
+height: 32px;
+font-size: 18px;
+font-weight: bold;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.modal-section {
+margin-top: 15px;
+padding-top: 12px;
+border-top: 1px solid var(--border-color);
+}
+.modal-section:first-of-type { border-top: none; padding-top: 0; }
+.modal-section-title {
+color: var(--accent);
+font-size: 14px;
+font-weight: bold;
+margin-bottom: 8px;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+.modal-row {
+display: flex;
+justify-content: space-between;
+padding: 6px 0;
+font-size: 13px;
+border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+}
+.modal-row:last-child { border-bottom: none; }
+.modal-label { color: var(--text-muted); }
+.modal-value { font-weight: bold; color: var(--text-main); direction: ltr; unicode-bidi: embed; }
+.modal-badge {
+display: inline-block;
+background-color: var(--accent);
+color: var(--accent-text);
+padding: 2px 10px;
+border-radius: 10px;
+font-size: 11px;
+font-weight: bold;
+}
+.modal-actions {
+display: flex;
+gap: 6px;
+margin-top: 15px;
+}
+.modal-actions .btn {
+flex: 1;
+font-size: 11px;
+padding: 10px 4px;
+}
 </style>
 </head>
 <body>
@@ -433,7 +527,7 @@ const capUnit = unit === 'metric' ? 'L/m' : 'bbl/ft';
 const wUnit = unit === 'metric' ? 'kg/m' : 'lb/ft';
 const ltrStyle = 'style="direction:ltr;unicode-bidi:embed;"';
 
-html += `<tr>
+html += `<tr onclick="showToolDetails(${toolsDatabase.indexOf(t)})" style="cursor:pointer;">
 <td>${i+1}</td>
 <td>${t.type}</td>
 <td ${ltrStyle}>${t.size}</td>
@@ -574,6 +668,213 @@ document.getElementById('an_result').innerHTML = `
 <div class="result-row"><span class="result-label">In m³:</span><span class="result-value">${(total/1000).toFixed(4)} m³</span></div>
 `;
 }
+// ============ Modal Details ============
+function showToolDetails(index) {
+const t = toolsDatabase[index];
+if (!t) return;
+
+const unit = document.getElementById('unitSystem').value;
+const cap = getCapacity(t.od, t.id, unit);
+const disp = getDisplacement(t.od, t.id, unit);
+const w = getWeight(t.weight, unit);
+const capUnit = unit === 'metric' ? 'L/m' : 'bbl/ft';
+const wUnit = unit === 'metric' ? 'kg/m' : 'lb/ft';
+
+// Wall thickness
+const wallThickness = ((t.od - t.id) / 2).toFixed(3);
+
+// Grade info
+const gradeInfo = {
+'E': { yield: '75,000 psi', color: '#22c55e' },
+'X': { yield: '95,000 psi', color: '#3b82f6' },
+'G': { yield: '105,000 psi', color: '#f59e0b' },
+'S': { yield: '135,000 psi', color: '#ef4444' }
+};
+const grade = gradeInfo[t.grade] || { yield: '-', color: '#64748b' };
+
+// Make-up torque (approximate)
+const torque = (t.od * 620).toFixed(0);
+
+// Type full name
+const typeNames = {
+'DP': 'Drill Pipe',
+'HWDP': 'Heavy Weight Drill Pipe',
+'DC': 'Drill Collar',
+'Stab': 'Stabilizer',
+'XO': 'Crossover'
+};
+
+document.getElementById('modalTitle').textContent = `🔧 ${typeNames[t.type] || t.type} ${t.size}`;
+
+const html = `
+<div style="text-align:center;margin-bottom:10px;">
+<span class="modal-badge">${t.type}</span>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">📐 ${currentLang === 'ar' ? 'الأبعاد' : currentLang === 'fr' ? 'Dimensions' : 'Dimensions'}</div>
+<div class="modal-row"><span class="modal-label">Outside Diameter (OD)</span><span class="modal-value">${t.od}" (${(t.od * 25.4).toFixed(2)} mm)</span></div>
+<div class="modal-row"><span class="modal-label">Inside Diameter (ID)</span><span class="modal-value">${t.id}" (${(t.id * 25.4).toFixed(2)} mm)</span></div>
+<div class="modal-row"><span class="modal-label">Wall Thickness</span><span class="modal-value">${wallThickness}" (${(wallThickness * 25.4).toFixed(2)} mm)</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">⚖️ ${currentLang === 'ar' ? 'الوزن' : currentLang === 'fr' ? 'Poids' : 'Weight'}</div>
+<div class="modal-row"><span class="modal-label">Weight (Metric)</span><span class="modal-value">${(t.weight * 1.48816).toFixed(2)} kg/m</span></div>
+<div class="modal-row"><span class="modal-label">Weight (Imperial)</span><span class="modal-value">${t.weight.toFixed(2)} lb/ft</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">📊 ${currentLang === 'ar' ? 'السعة والإزاحة' : currentLang === 'fr' ? 'Capacité & Déplacement' : 'Capacity & Displacement'}</div>
+<div class="modal-row"><span class="modal-label">Capacity (Metric)</span><span class="modal-value">${getCapacity(t.od, t.id, 'metric').toFixed(4)} L/m</span></div>
+<div class="modal-row"><span class="modal-label">Capacity (Imperial)</span><span class="modal-value">${getCapacity(t.od, t.id, 'imperial').toFixed(4)} bbl/ft</span></div>
+<div class="modal-row"><span class="modal-label">Displacement (Metric)</span><span class="modal-value">${getDisplacement(t.od, t.id, 'metric').toFixed(4)} L/m</span></div>
+<div class="modal-row"><span class="modal-label">Displacement (Imperial)</span><span class="modal-value">${getDisplacement(t.od, t.id, 'imperial').toFixed(4)} bbl/ft</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">🔩 ${currentLang === 'ar' ? 'البيانات التقنية' : currentLang === 'fr' ? 'Données Techniques' : 'Technical Data'}</div>
+<div class="modal-row"><span class="modal-label">Grade</span><span class="modal-value" style="color:${grade.color};">${t.grade}</span></div>
+<div class="modal-row"><span class="modal-label">Yield Strength</span><span class="modal-value">${grade.yield}</span></div>
+<div class="modal-row"><span class="modal-label">Make-up Torque (approx)</span><span class="modal-value">${torque} ft-lb</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">📏 ${currentLang === 'ar' ? 'حسابات لـ 1000 متر' : currentLang === 'fr' ? 'Calculs pour 1000m' : 'Calculations for 1000m'}</div>
+<div class="modal-row"><span class="modal-label">Weight (1000m)</span><span class="modal-value">${(t.weight * 1.48816 * 1000).toFixed(0)} kg</span></div>
+<div class="modal-row"><span class="modal-label">Capacity Volume (1000m)</span><span class="modal-value">${(getCapacity(t.od, t.id, 'metric') * 1000).toFixed(0)} L</span></div>
+<div class="modal-row"><span class="modal-label">Displacement (1000m)</span><span class="modal-value">${(getDisplacement(t.od, t.id, 'metric') * 1000).toFixed(0)} L</span></div>
+</div>
+
+<div class="modal-actions">
+<button class="btn btn-primary" onclick="exportToolPDF(${index})">📄 PDF</button>
+<button class="btn btn-success" onclick="exportToolExcel(${index})">📊 Excel</button>
+<button class="btn btn-secondary" onclick="closeModal()">✕ Close</button>
+</div>
+`;
+
+document.getElementById('modalBody').innerHTML = html;
+document.getElementById('toolModal').classList.add('active');
+}
+
+function closeModal(event) {
+if (event && event.target !== event.currentTarget) return;
+document.getElementById('toolModal').classList.remove('active');
+}
+
+function exportToolPDF(index) {
+const t = toolsDatabase[index];
+alert('📄 Export PDF for ' + t.size + ' — Soon!');
+}
+
+function exportToolExcel(index) {
+const t = toolsDatabase[index];
+alert('📊 Export Excel for ' + t.size + ' — Soon!');
+}
+
+// ==========// ============ Modal Details ============
+function showToolDetails(index) {
+const t = toolsDatabase[index];
+if (!t) return;
+
+const unit = document.getElementById('unitSystem').value;
+const cap = getCapacity(t.od, t.id, unit);
+const disp = getDisplacement(t.od, t.id, unit);
+const w = getWeight(t.weight, unit);
+const capUnit = unit === 'metric' ? 'L/m' : 'bbl/ft';
+const wUnit = unit === 'metric' ? 'kg/m' : 'lb/ft';
+
+// Wall thickness
+const wallThickness = ((t.od - t.id) / 2).toFixed(3);
+
+// Grade info
+const gradeInfo = {
+'E': { yield: '75,000 psi', color: '#22c55e' },
+'X': { yield: '95,000 psi', color: '#3b82f6' },
+'G': { yield: '105,000 psi', color: '#f59e0b' },
+'S': { yield: '135,000 psi', color: '#ef4444' }
+};
+const grade = gradeInfo[t.grade] || { yield: '-', color: '#64748b' };
+
+// Make-up torque (approximate)
+const torque = (t.od * 620).toFixed(0);
+
+// Type full name
+const typeNames = {
+'DP': 'Drill Pipe',
+'HWDP': 'Heavy Weight Drill Pipe',
+'DC': 'Drill Collar',
+'Stab': 'Stabilizer',
+'XO': 'Crossover'
+};
+
+document.getElementById('modalTitle').textContent = `🔧 ${typeNames[t.type] || t.type} ${t.size}`;
+
+const html = `
+<div style="text-align:center;margin-bottom:10px;">
+<span class="modal-badge">${t.type}</span>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">📐 ${currentLang === 'ar' ? 'الأبعاد' : currentLang === 'fr' ? 'Dimensions' : 'Dimensions'}</div>
+<div class="modal-row"><span class="modal-label">Outside Diameter (OD)</span><span class="modal-value">${t.od}" (${(t.od * 25.4).toFixed(2)} mm)</span></div>
+<div class="modal-row"><span class="modal-label">Inside Diameter (ID)</span><span class="modal-value">${t.id}" (${(t.id * 25.4).toFixed(2)} mm)</span></div>
+<div class="modal-row"><span class="modal-label">Wall Thickness</span><span class="modal-value">${wallThickness}" (${(wallThickness * 25.4).toFixed(2)} mm)</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">⚖️ ${currentLang === 'ar' ? 'الوزن' : currentLang === 'fr' ? 'Poids' : 'Weight'}</div>
+<div class="modal-row"><span class="modal-label">Weight (Metric)</span><span class="modal-value">${(t.weight * 1.48816).toFixed(2)} kg/m</span></div>
+<div class="modal-row"><span class="modal-label">Weight (Imperial)</span><span class="modal-value">${t.weight.toFixed(2)} lb/ft</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">📊 ${currentLang === 'ar' ? 'السعة والإزاحة' : currentLang === 'fr' ? 'Capacité & Déplacement' : 'Capacity & Displacement'}</div>
+<div class="modal-row"><span class="modal-label">Capacity (Metric)</span><span class="modal-value">${getCapacity(t.od, t.id, 'metric').toFixed(4)} L/m</span></div>
+<div class="modal-row"><span class="modal-label">Capacity (Imperial)</span><span class="modal-value">${getCapacity(t.od, t.id, 'imperial').toFixed(4)} bbl/ft</span></div>
+<div class="modal-row"><span class="modal-label">Displacement (Metric)</span><span class="modal-value">${getDisplacement(t.od, t.id, 'metric').toFixed(4)} L/m</span></div>
+<div class="modal-row"><span class="modal-label">Displacement (Imperial)</span><span class="modal-value">${getDisplacement(t.od, t.id, 'imperial').toFixed(4)} bbl/ft</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">🔩 ${currentLang === 'ar' ? 'البيانات التقنية' : currentLang === 'fr' ? 'Données Techniques' : 'Technical Data'}</div>
+<div class="modal-row"><span class="modal-label">Grade</span><span class="modal-value" style="color:${grade.color};">${t.grade}</span></div>
+<div class="modal-row"><span class="modal-label">Yield Strength</span><span class="modal-value">${grade.yield}</span></div>
+<div class="modal-row"><span class="modal-label">Make-up Torque (approx)</span><span class="modal-value">${torque} ft-lb</span></div>
+</div>
+
+<div class="modal-section">
+<div class="modal-section-title">📏 ${currentLang === 'ar' ? 'حسابات لـ 1000 متر' : currentLang === 'fr' ? 'Calculs pour 1000m' : 'Calculations for 1000m'}</div>
+<div class="modal-row"><span class="modal-label">Weight (1000m)</span><span class="modal-value">${(t.weight * 1.48816 * 1000).toFixed(0)} kg</span></div>
+<div class="modal-row"><span class="modal-label">Capacity Volume (1000m)</span><span class="modal-value">${(getCapacity(t.od, t.id, 'metric') * 1000).toFixed(0)} L</span></div>
+<div class="modal-row"><span class="modal-label">Displacement (1000m)</span><span class="modal-value">${(getDisplacement(t.od, t.id, 'metric') * 1000).toFixed(0)} L</span></div>
+</div>
+
+<div class="modal-actions">
+<button class="btn btn-primary" onclick="exportToolPDF(${index})">📄 PDF</button>
+<button class="btn btn-success" onclick="exportToolExcel(${index})">📊 Excel</button>
+<button class="btn btn-secondary" onclick="closeModal()">✕ Close</button>
+</div>
+`;
+
+document.getElementById('modalBody').innerHTML = html;
+document.getElementById('toolModal').classList.add('active');
+}
+
+function closeModal(event) {
+if (event && event.target !== event.currentTarget) return;
+document.getElementById('toolModal').classList.remove('active');
+}
+
+function exportToolPDF(index) {
+const t = toolsDatabase[index];
+alert('📄 Export PDF for ' + t.size + ' — Soon!');
+}
+
+function exportToolExcel(index) {
+const t = toolsDatabase[index];
+alert('📊 Export Excel for ' + t.size + ' — Soon!');
+}
 
 // ============ الكاميرا ============
 function handlePhoto(event) {
@@ -658,6 +959,16 @@ setLanguage(savedLang);
 filterDatabase();
 showCalculator();
 });
+<!-- Modal -->
+<div class="modal-overlay" id="toolModal" onclick="closeModal(event)">
+<div class="modal-content" onclick="event.stopPropagation()">
+<div class="modal-header">
+<div class="modal-title" id="modalTitle">Tool Details</div>
+<button class="modal-close" onclick="closeModal()">✕</button>
+</div>
+<div id="modalBody"></div>
+</div>
+</div>
 </script>
 
 </body>
